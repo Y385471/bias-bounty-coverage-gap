@@ -75,13 +75,26 @@ def region_counts(con, region):
             FROM '{src}' x JOIN tracts t ON ST_Intersects(x.geometry, t.geom)
             WHERE {where} GROUP BY 1""", name), on="GEOID", how="left")
 
-    # --- buildings: footprints whose centroid falls in the tract
-    for name, layer in [("bldg_overture", "overture-buildings"), ("bldg_microsoft", "microsoft-buildings")]:
-        log(f"{region}: {name}")
-        out = out.merge(per_tract(f"""
-            SELECT t.GEOID, count(*) AS v
-            FROM '{ref(region, layer)}' x JOIN tracts t ON ST_Contains(t.geom, ST_Centroid(x.geometry))
-            GROUP BY 1""", name), on="GEOID", how="left")
+    # --- buildings: footprints whose centroid falls in the tract.
+    # Overture also gets a breakdown by upstream source and by class, used only by the bias analysis
+    # (mobile homes are tagged building=static_caravan in OpenStreetMap).
+    log(f"{region}: bldg_overture")
+    df = con.sql(f"""
+        SELECT t.GEOID,
+               count(*) AS bldg_overture,
+               count(*) FILTER (WHERE x.sources[1].dataset = 'OpenStreetMap') AS bldg_ov_osm,
+               count(*) FILTER (WHERE x.sources[1].dataset ILIKE '%microsoft%') AS bldg_ov_msml,
+               count(*) FILTER (WHERE x.sources[1].dataset ILIKE '%google%') AS bldg_ov_google,
+               count(*) FILTER (WHERE x.class IN ('static_caravan', 'caravan')) AS bldg_ov_caravan
+        FROM '{ref(region, "overture-buildings")}' x JOIN tracts t ON ST_Contains(t.geom, ST_Centroid(x.geometry))
+        GROUP BY 1""").df()
+    df["GEOID"] = df["GEOID"].astype(str)
+    out = out.merge(df, on="GEOID", how="left")
+    log(f"{region}: bldg_microsoft")
+    out = out.merge(per_tract(f"""
+        SELECT t.GEOID, count(*) AS v
+        FROM '{ref(region, "microsoft-buildings")}' x JOIN tracts t ON ST_Contains(t.geom, ST_Centroid(x.geometry))
+        GROUP BY 1""", "bldg_microsoft"), on="GEOID", how="left")
 
     # --- POIs: Overture places by category vs USGS/HIFLD facility points
     log(f"{region}: overture places")
