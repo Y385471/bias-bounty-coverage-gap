@@ -101,8 +101,10 @@ I ran 18 variants:
 - patched cut-offs of 0.7 and 0.8.
 
 Each variant got a one-sided permutation test (5,000 shuffles) on the difference in median SVI between unpatched and patched holes.
-- **Poverty and no-vehicle shares are higher in unpatched holes in 16 of the 18 variants.**
-- The SVI difference is significant at hole thresholds 0.5–0.6: p = 0.001–0.04 under midpoint weights, p = 0.001–0.08 under conservative and lenient weights.
+- **The no-vehicle share is higher in unpatched holes in all 18 variants, and the poverty share in 17 of 18.**
+- The SVI difference is significant at hole threshold 0.6 under every weighting: p = 0.001–0.036.
+  - At 0.5 it is significant under midpoint weights with the 0.8 cut-off (p = 0.040) and borderline under conservative weights (p = 0.057–0.080).
+  - At 0.5 under lenient weights it is not significant (p = 0.11–0.32).
 - **It is not significant at 0.4.** The most extreme holes (< 0.4) sit in high-SVI tracts (median about 0.75) whether patched or not.
 
 So I state the finding in two parts:
@@ -119,7 +121,7 @@ About **57,700 people live in double-miss tracts**, and **114,000 in unpatched h
 
 - **Damage assessment and aid.** Building footprints are the base layer for preliminary, remote-sensing damage assessments after hurricanes and floods. A tract missing 90 % of its homes produces 90 % fewer "affected structures". That undercounts the need exactly where households have the least slack: poverty above 25 %.
 - **Evacuation and sheltering.** Shelter demand and door-to-door notification are planned from structure counts. In the unpatched tracts, 6.6–13.7 % of households have no car and depend on that planning to be reached.
-- **Emergency dispatch.** Geocoders snap addresses to building points. A home that is missing from both layers falls back to a street-segment interpolation, which costs minutes in dense tracts.
+- **Emergency dispatch.** Rooftop geocoding relies on building points. A home missing from both layers falls back to street-range interpolation, which is less precise, and least precise on the irregular lots common in older subdivisions.
 - **Heat outreach.** Heat-vulnerability programmes target building stock, for example uncooled structures and mobile homes. These tracts drop out of any footprint-weighted estimate.
 
 ### 2.6 Reproduce it
