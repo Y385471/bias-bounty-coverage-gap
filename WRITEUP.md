@@ -7,7 +7,7 @@ Zindi user `yousef_emad` · code: https://github.com/Y385471/bias-bounty-coverag
 
 ## TL;DR
 
-- **Methodology.** One Python file (`coverage_gap.py`) reads every layer straight from the public bucket with DuckDB. It computes the three components per tract exactly as specified and writes the submission plus every intermediate count. The first run scored RMSE 0.000145, using centroid building assignment. The final run uses bounding-box-centre assignment [score: TBD].
+- **Methodology.** One Python file (`coverage_gap.py`) reads every layer straight from the public bucket with DuckDB. It computes the three components per tract exactly as specified and writes the submission plus every intermediate count. The first run scored RMSE 0.000145, using centroid building assignment. Bounding-box-centre assignment scored 0.000145 as well. The last 1e-4 is documented in §1.4, not hidden.
 - **Discovery.** I compared the building reference (Microsoft footprints) with an independent third source: the number of residential *structures* the Census ACS implies for each tract. **78 tracts, home to 306,821 people, hold less than half a Microsoft footprint per residential structure.** These are not new subdivisions: only 4–6 % of their homes were built after 2010.
   - **Patched (47 tracts):** volunteers filled the hole. Overture has these homes almost entirely from OpenStreetMap (57,479 of 61,126 buildings).
   - **Not patched (31 tracts):** these are the poorer ones. The poverty share is 25–38 % against 15 %, and 6.6–13.7 % of households have no vehicle, against 3.3 %.
@@ -52,7 +52,7 @@ Every gap is `1 − min(1, overture / reference)`. It is **undefined** when the 
 
 ### 1.4 Checks
 - The transport component is undefined in 218 of 591 Northern California tracts, 869 of 1,593 in Maricopa, 253 of 1,192 in Eastern Oklahoma and 1,704 of 6,003 in South-Central Texas. My output matches these README counts exactly.
-- Leaderboard: centroid assignment scored 0.000145; bounding-box centre scored [TBD].
+- Leaderboard RMSE is 0.000144981 with centroid assignment and 0.00014538 with bounding-box-centre assignment; 47 of 9,379 tracts change between the two. The residual is therefore not in building attachment, and I report it as open rather than tune against the leaderboard.
 
 ---
 
@@ -93,6 +93,14 @@ Across all tracts with at least 150 structures, the median is **1.21 Microsoft f
 | 04013103305 | Maricopa, AZ | 289 (+ 37 % mobile homes) | **0** | 815 | 0.98 | *undefined, excluded* |
 
 The last tract has the highest SVI in its group and 37 % mobile homes. Its reference holds zero footprints, so its building component drops out of the composite entirely.
+
+**See it.** Esri World Imagery with both footprint layers on top (`casemap.py`). Inside the yellow tract, a complete subdivision of detached homes is visible on the imagery and missing from **both** layers; the neighbourhoods across the boundary are fully mapped in both. Scored `building_gap`: 0.
+
+![double miss, Harris County](figures/case-48201550404.png)
+
+The patched case: Microsoft holds 1 footprint and OpenStreetMap-fed Overture holds 1,065.
+
+![patched hole, Maricopa](figures/case-04013422218.png)
 
 ### 2.3 Robustness
 I ran 18 variants:
