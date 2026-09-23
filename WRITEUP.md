@@ -117,7 +117,7 @@ The full table is in `analysis/robust.mjs`.
 The five scorecard metrics are all computed from Overture-versus-Microsoft gaps. A home missing from **both** layers never enters any of them, and neither do stratum cross-tabulations. It also stays invisible to the raw, unclipped Overture-vs-Microsoft disagreement, because the two layers agree. Discussion 34844 shows how clipping hides reference surplus on tribal land; this is the complementary blind spot. Only a benchmark independent of both maps can surface it, and the ACS counts of homes are exactly that.
 
 ### 2.5 Who is affected and why it matters
-About **57,700 people live in double-miss tracts**, and **114,000 in unpatched holes** overall. Most are in Harris County (Houston), a county hit by Harvey (2017), Beryl (2024) and repeated flooding.
+About **57,700 people live in double-miss tracts**, and **114,000 in unpatched holes** overall. **18 of the 31 unpatched holes are in Harris County (Houston)**, against 8 of the 47 patched ones. Harris County was hit by Harvey (2017), Beryl (2024) and repeated flooding.
 
 - **Damage assessment and aid.** Building footprints are the base layer for preliminary, remote-sensing damage assessments after hurricanes and floods. A tract missing 90 % of its homes produces 90 % fewer "affected structures". That undercounts the need exactly where households have the least slack: poverty above 25 %.
 - **Evacuation and sheltering.** Shelter demand and door-to-door notification are planned from structure counts. In the unpatched tracts, 6.6–13.7 % of households have no car and depend on that planning to be reached.
