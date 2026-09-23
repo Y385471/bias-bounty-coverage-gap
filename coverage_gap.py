@@ -53,8 +53,9 @@ def region_counts(con, region):
         SELECT GEOID, geometry AS geom
         FROM '{B}/strata/{region}/{region}-census-tracts.parquet'
     """)
-    scored = pd.read_csv(f"https://data.source.coop/humane-intelligence/bias-bounty-mapping-equity-challenge/reference/{region}/{region}-sample-submission.csv",
-                         dtype={"GEOID": str})[["GEOID"]]
+    # pandas' urllib User-Agent gets a 403 from the proxy, so read the CSV through DuckDB
+    scored = con.sql(f"""SELECT GEOID FROM read_csv('{B}/reference/{region}/{region}-sample-submission.csv',
+                         types={{'GEOID': 'VARCHAR'}})""").df()
     out = scored.copy()
 
     def per_tract(sql, name):
