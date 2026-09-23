@@ -1,0 +1,65 @@
+<p><b>Full write-up with figures and tables:</b> <a href="https://github.com/Y385471/bias-bounty-coverage-gap/blob/main/WRITEUP.md">github.com/Y385471/bias-bounty-coverage-gap/blob/main/WRITEUP.md</a>. The code for both parts is in the same repository.</p>
+
+<h2>Best Bias Discovery: homes missing from both maps are scored as "fully mapped"</h2>
+<p><b>The pattern.</b> Every scorecard metric compares Overture with Microsoft footprints. When both layers miss the same homes they agree, so <code>building_gap</code> = 0. Even the raw, unclipped disagreement is 0. Only a count of homes that is independent of both maps can reveal this.</p>
+<p><b>The independent benchmark.</b> I used Census ACS 2019–2023 table <b>B25024, units in structure</b>, to count expected residential <i>structures</i> per tract:</p>
+<p><code>detached + attached/2 + 2-unit/2 + (3–4)/3.5 + (5–9)/7 + (10–19)/14.5 + (20–49)/35 + (50+)/100 + mobile homes + boats/RVs</code></p>
+<p>The median is 1.21 Microsoft footprints per structure. That is above 1 because footprints also include garages, sheds and shops, so a threshold of 0.5 is conservative.</p>
+<p><b>Result.</b> <b>78 tracts, home to 306,821 people, hold fewer than 0.5 Microsoft footprints per residential structure.</b> They are not new construction. ACS B25034 puts 4–6 % of their homes after 2010, against 9 % elsewhere. The machine-learning reference simply missed them.</p>
+<ul>
+<li><b>Patched by volunteers (47 tracts, 193k people).</b> Overture has these homes, and 94 % of its buildings there come from OpenStreetMap (57,479 of 61,126). Median SVI 0.51, poverty (&lt;150 % FPL) 14.9 %, no vehicle 3.3 %.</li>
+<li><b>Not patched (31 tracts, 114k people).</b> Median SVI 0.69–0.76, poverty 25–38 %, no vehicle 6.6–13.7 %, limited English up to 7.1 %.
+<ul><li>Of these, 16 tracts are a <b>double miss</b>: Overture holds fewer than 0.5 footprints per structure too.</li>
+<li><b>18 of the 31 are in Harris County (Houston)</b>, against 8 of the 47 patched tracts.</li></ul></li>
+<li><b>The scored <code>building_gap</code> is 0 in 71 of the 78 hole tracts.</b> The scorecard reports them as fully mapped.</li>
+</ul>
+<p><b>Named tracts.</b></p>
+<ul>
+<li><b>48201550404</b> (Harris, TX): 1,714 detached homes in ACS, Microsoft 165, Overture 175, SVI 0.69, gap 0. The satellite figure in the write-up shows a complete subdivision missing from both layers, while the streets across the tract line are fully mapped.</li>
+<li><b>48201551000</b> (Harris, TX): 992 detached homes, Microsoft 95, Overture 102, SVI 0.81, gap 0.</li>
+<li><b>04013422218</b> (Maricopa, AZ, patched): 1,090 detached homes, Microsoft <b>1</b>, Overture 1,065.</li>
+<li><b>04013103305</b> (Maricopa, AZ): SVI 0.98, 37 % mobile homes, Microsoft <b>0</b>. The building component is undefined, so the tract drops out of the building score entirely.</li>
+</ul>
+<p><b>Robustness.</b> I ran 18 variants: three structure weightings × hole thresholds 0.4 / 0.5 / 0.6 × patched cut-offs 0.7 / 0.8, each with a permutation test on median SVI (5,000 shuffles).</p>
+<ul>
+<li>The no-vehicle share is higher in unpatched holes in 18 of 18 variants, and poverty in 17 of 18.</li>
+<li>The SVI difference is significant at threshold 0.6 under every weighting (p = 0.001–0.036).</li>
+<li>At 0.5 it is mixed.</li>
+<li><b>At 0.4 it is not significant.</b> The most extreme holes are high-SVI whether patched or not.</li>
+</ul>
+<p>So the claim is stated in two parts: reference holes concentrate in vulnerable urban tracts, and among moderate holes, volunteers patched the less deprived ones.</p>
+<p><b>Why it matters.</b></p>
+<ul>
+<li>Footprints are the base layer for post-hurricane and post-flood remote damage assessment. A tract missing about 90 % of its homes reports about 90 % fewer affected structures, in tracts where more than a quarter of households are below 150 % of the poverty line.</li>
+<li>Shelter demand and door-to-door evacuation notices are planned from structure counts, and up to 13.7 % of these households have no car.</li>
+<li>Rooftop geocoding falls back to street-range interpolation when a building is missing.</li>
+<li>Harris County has been hit by Harvey (2017), Beryl (2024) and repeated floods.</li>
+</ul>
+<p><b>Related work.</b> Discussion 34844 shows that clipping hides reference <i>surplus</i> on tribal land. This is the complementary blind spot, a <i>shared deficit</i>, and only an outside benchmark can see it.</p>
+<p><b>Additional public data.</b></p>
+<ul>
+<li>ACS 5-year table-based summary files <code>acsdt5y2023-b25024.dat</code> and <code>acsdt5y2023-b25034.dat</code> from www2.census.gov/programs-surveys/acs/summary_file/2023/table-based-SF/data/5YRData/ (retrieved 2026-09-24).</li>
+<li>CDC/ATSDR SVI 2022 state CSVs from svi.cdc.gov/Documents/Data/2022/csv/states/ for AZ, CA, NM, OK and TX (retrieved 2026-09-23).</li>
+<li>Imagery: Esri World Imagery.</li>
+</ul>
+
+<h2>Methodology (Best Documentation)</h2>
+<ul>
+<li><b>Pipeline.</b> One file, <code>coverage_gap.py</code>, with DuckDB 1.5.4 reading straight from the bucket (<code>s3_url_style='path'</code>, because the bucket name has dots). It runs in about 20 minutes on a free Colab CPU and writes the submission plus every per-tract count.</li>
+<li><b>Transport.</b> Named-highway length clipped to each tract with <code>ST_Intersection</code>, measured in EPSG:5070 with <code>always_xy := true</code>; without it, DuckDB reads the CRS84 layers as lat/lon and returns inf. Overture motorway / trunk / primary / secondary against TIGER S1100 / S1200.</li>
+<li><b>Buildings.</b> Counts with bounding-box-centre attachment.</li>
+<li><b>POI.</b> The mean of two halves. The facilities half averages the defined per-type gaps for fire, EMS and schools, matched on <code>categories.primary</code>, with hospitals excluded. The other half is all Overture places against <code>cbp_estab</code>.</li>
+<li><b>Composite.</b> The mean of the defined components only.</li>
+<li><b>Edge cases.</b>
+<ul><li>Undefined is a property of the reference side: written as 0 with its flag FALSE and excluded from the mean.</li>
+<li>No Overture data with a reference present gives a full gap of 1.</li>
+<li>Zero-population tracts are scored normally.</li>
+<li>The 99xx water tracts are not in the scored list.</li>
+<li>GEOID is always text.</li>
+<li>The scorer reads the 2nd column, so the file starts with <code>GEOID, coverage_gap_score</code>.</li>
+<li>pandas / urllib gets a 403 from the proxy, so CSVs are read through DuckDB.</li></ul></li>
+<li><b>Checks.</b>
+<ul><li>Transport-undefined counts match the README exactly: 218 / 869 / 253 / 1,704.</li>
+<li>Leaderboard RMSE is 0.000145 under both centroid and bbox-centre attachment; 47 tracts change between them. The residual is reported as open, not tuned away.</li></ul></li>
+</ul>
+<p>Limitations are in the write-up: ACS sampling error, so tracts under 150 structures are excluded; assumed structure weights, bracketed by the robustness grid; and non-residential footprints.</p>
