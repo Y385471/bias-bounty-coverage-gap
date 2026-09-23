@@ -33,7 +33,7 @@ Every layer is read in place from `s3://us-west-2.opendata.source.coop/humane-in
 Every gap is `1 − min(1, overture / reference)`. It is **undefined** when the reference is 0, and it is never filled with 0 before averaging.
 
 - **Transport.** Road length inside the tract. Each segment is clipped with `ST_Intersection` and measured in EPSG:5070 with `always_xy := true`; without it, DuckDB reads the CRS84 layers as lat/lon and returns `inf`. Overture `class ∈ {motorway, trunk, primary, secondary}` is compared with TIGER `MTFCC ∈ {S1100, S1200}`.
-- **Buildings.** Footprint counts, Overture against Microsoft. A footprint belongs to the tract that contains **the centre of its bounding box**, taken from the `bbox` struct. With centroid assignment the scores differ from the reference at the 1e-4 level.
+- **Buildings.** Footprint counts, Overture against Microsoft. A footprint belongs to the tract that contains **the centre of its bounding box**, taken from the `bbox` struct. Centroid assignment gives the same leaderboard RMSE to three significant figures (§1.4), and 47 tracts change between the two rules.
 - **POI.** This is the mean of two halves:
   - The facilities half is the mean of the defined per-type gaps. Overture `categories.primary` is matched against the USGS/HIFLD point layers: `fire_department` for fire stations, `ambulance_and_ems_services` for EMS, and the six school categories for schools. Hospitals are excluded, as specified.
   - The CBP half compares all Overture places with `cbp_estab`.
