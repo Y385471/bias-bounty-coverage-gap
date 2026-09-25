@@ -144,3 +144,31 @@ About **57,700 people live in double-miss tracts**, and **114,000 in unpatched h
 - ACS values are 5-year estimates with sampling error. Small tracts carry wide margins, so tracts with fewer than 150 structures are excluded.
 - The structures-per-unit weights are assumptions. The robustness grid brackets them, but a parcel-level count would be firmer.
 - Microsoft footprints include non-residential buildings. This makes the hole definition conservative, but it also means a few commercial-heavy tracts can mask a residential hole.
+
+## Addendum (2026-09-25): confidence intervals and a correction
+
+Script: `analysis/ci.mjs` (seeded bootstrap, 5,000 resamples; same inputs and hole definition as `holes2.mjs`).
+
+**The core finding holds, with an interval.** 71 of 78 reference-hole tracts (91%, 95% CI 85%–97%) are scored `building_gap = 0`. These tracts hold 306,821 people.
+
+| region | tracts | hole tracts | people in holes | holes scored building_gap = 0 | median SVI (holes / rest) |
+|---|---|---|---|---|---|
+| eastern-ok | 1,170 | 0 | 0 | — | — / 0.62 |
+| maricopa-az | 1,549 | 16 | 59,689 | 14 / 16 | 0.34 / 0.52 |
+| northern-ca | 585 | 1 | 1,637 | 1 / 1 | 0.69 / 0.58 |
+| south-central-tx | 5,820 | 61 | 245,495 | 56 / 61 | 0.75 / 0.64 |
+
+**Correction.** Across all tracts, reference holes are *not* more frequent in high-SVI tracts:
+- top vs bottom SVI tercile: risk ratio 1.03 (95% CI 0.63–1.75);
+- region-stratified Mantel–Haenszel: 1.04 (0.61–1.84);
+- urban tracts only: 1.00 (0.58–1.71).
+
+The vulnerability signal is regional and sits inside the holes:
+- South-Central Texas holes have median SVI 0.75 vs 0.64 elsewhere in the region.
+- Among hole tracts, the ones OpenStreetMap volunteers have *not* patched are poorer than the patched ones (robustness grid in `robust.mjs`).
+
+The equity harm is therefore twofold:
+1. the scorecard cannot see these gaps at all (91% scored 0);
+2. where volunteers have not filled them in, the missing homes are in poorer communities.
+
+The earlier wording that holes "concentrate in vulnerable tracts" overall is withdrawn.
